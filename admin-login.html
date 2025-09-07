@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Video Streaming App</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Admin login page for video streaming application">
+    <meta name="keywords" content="admin, login, video, streaming">
+    <meta name="author" content="">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Admin Login - Video Streaming App">
+    <meta property="og:description" content="Admin login page for video streaming application">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Admin Login - Video Streaming App">
+    <meta name="twitter:description" content="Admin login page for video streaming application">
+    <meta name="twitter:image" content="">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            color: rgb(255, 255, 255);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        
+        .error {
+            color: #ef4444;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="glass p-8 rounded-lg shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold mb-2">🔧 Admin Login</h1>
+                <p class="text-gray-300">Enter your credentials to access the admin panel</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    Login to Admin Panel
+                </button>
+                
+                <div id="error" class="error hidden"></div>
+            </form>
+            
+
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Show loading state
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store token
+                    localStorage.setItem('adminToken', data.token);
+                    sessionStorage.setItem('adminToken', data.token);
+                    
+                    // Redirect to admin panel
+                    window.location.href = '/admin';
+                } else {
+                    throw new Error(data.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = error.message || 'Login failed. Please try again.';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.textContent = 'Login to Admin Panel';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 

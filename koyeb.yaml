@@ -1,0 +1,25 @@
+name: video-streaming-app
+service:
+  name: video-streaming-app
+  type: web
+  env:
+    - name: NODE_ENV
+      value: production
+    - name: PORT
+      value: 3000
+  ports:
+    - port: 3000
+      protocol: http
+  routes:
+    - path: /
+      protocol: http
+  build:
+    builder: nodejs
+    buildCommand: npm install
+    startCommand: npm start
+  healthCheck:
+    path: /api/health
+    port: 3000
+    interval: 30s
+    timeout: 10s
+    retries: 3 

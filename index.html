@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="5664207d765910883538ddd0042d1287188fdc94" content="5664207d765910883538ddd0042d1287188fdc94" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Streaming App</title>
+    <meta name="description" content="Stream and download videos from various sources">
+    <meta name="keywords" content="video, streaming, download, mp4">
+    <meta name="author" content="">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Video Streaming App">
+    <meta property="og:description" content="Stream and download videos from various sources">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Video Streaming App">
+    <meta name="twitter:description" content="Stream and download videos from various sources">
+    <meta name="twitter:image" content="">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        body {
+            color: rgb(255, 255, 255);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+        }
+        
+        .ad-container {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .ad-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .ad-content {
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .ad-fallback {
+            display: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .ad-dots {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .ad-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .ad-dot.active {
+            background-color: #3b82f6;
+        }
+        
+        .ad-dot.inactive {
+            background-color: #d1d5db;
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://vjs.zencdn.net/8.6.0/video-js.css" rel="stylesheet">
+    <script src="https://vjs.zencdn.net/8.6.0/video.min.js"></script>
+</head>
+<body>
+    <!-- Top Ad Banner -->
+    <div class="w-full glass border-b border-white/10 shadow-lg">
+        <div class="ad-banner top w-full min-h-32 py-4" data-position="top">
+            <div class="relative flex items-center justify-center">
+                <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                    <div class="ad-content" id="top-ad-content"></div>
+                    <div class="ad-fallback" id="top-ad-fallback">
+                        <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                        <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                    </div>
+                </div>
+                <div class="ad-dots" id="top-ad-dots"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Homepage -->
+        <div class="page active" id="homepage">
+            <div class="header">
+                <h1>🎬 YouTube Video Downloader</h1>
+                <p>Download YouTube videos in high quality for free</p>
+            </div>
+
+            <div class="card">
+                <form id="youtubeForm">
+                    <div class="form-group">
+                        <label for="youtubeUrl">YouTube Video URL:</label>
+                        <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary" id="analyzeBtn">
+                            <span id="analyzeBtnText">🔍 Analyze Video</span>
+                            <span id="analyzeBtnLoading" class="hidden">⏳ Analyzing...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Video Information -->
+            <div id="videoInfo" class="card hidden">
+                <div class="video-info-grid">
+                    <!-- Video Thumbnail -->
+                    <div class="video-thumbnail-section">
+                        <img id="videoThumbnail" src="" alt="Video Thumbnail" class="video-thumbnail">
+                        <div class="video-details">
+                            <h3 id="videoTitle" class="video-title"></h3>
+                            <p id="videoDuration" class="video-duration"></p>
+                            <p id="videoChannel" class="video-channel"></p>
+                        </div>
+                    </div>
+
+                    <!-- Download Options -->
+                    <div class="download-section">
+                        <h4 class="download-title">📥 Download Options</h4>
+                        <div id="downloadOptions" class="download-options">
+                            <!-- Download options will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-card hidden">
+                <div class="error-icon">❌</div>
+                <p id="errorText"></p>
+            </div>
+
+            <!-- Header Ad Banner -->
+            <div class="w-full glass border-b border-white/10 shadow-lg">
+                <div class="ad-banner header w-full min-h-32 py-4" data-position="header">
+                    <div class="relative flex items-center justify-center">
+                        <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                            <div class="ad-content" id="header-ad-content"></div>
+                            <div class="ad-fallback" id="header-ad-fallback">
+                                <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                                <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                            </div>
+                        </div>
+                        <div class="ad-dots" id="header-ad-dots"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Ad Banner -->
+            <div class="w-full glass border-b border-white/10 shadow-lg my-8">
+                <div class="ad-banner middle w-full min-h-32 py-4" data-position="middle">
+                    <div class="relative flex items-center justify-center">
+                        <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                            <div class="ad-content" id="middle-ad-content"></div>
+                            <div class="ad-fallback" id="middle-ad-fallback">
+                                <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                                <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                            </div>
+                        </div>
+                        <div class="ad-dots" id="middle-ad-dots"></div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Fast Download</h3>
+                    <p>Download videos instantly with our optimized servers</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>High Quality</h3>
+                    <p>Download in various qualities up to 4K resolution</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Safe & Secure</h3>
+                    <p>No registration required, completely free to use</p>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>How to download YouTube videos:</h3>
+                <ol>
+                    <li>Copy the URL of the YouTube video you want to download</li>
+                    <li>Paste it in the input field above</li>
+                    <li>Click "Analyze Video" to get download options</li>
+                    <li>Choose your preferred quality and format</li>
+                    <li>Click "Download" to save the video to your device</li>
+                </ol>
+            </div>
+
+            <!-- Sidebar Ad Banner -->
+            <div class="w-full glass border-b border-white/10 shadow-lg">
+                <div class="ad-banner sidebar w-full min-h-32 py-4" data-position="sidebar">
+                    <div class="relative flex items-center justify-center">
+                        <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                            <div class="ad-content" id="sidebar-ad-content"></div>
+                            <div class="ad-fallback" id="sidebar-ad-fallback">
+                                <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                                <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                            </div>
+                        </div>
+                        <div class="ad-dots" id="sidebar-ad-dots"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Page -->
+        <div class="page" id="loadingPage">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <p>Loading video information...</p>
+            </div>
+        </div>
+
+        <!-- Error Page -->
+        <div class="page" id="errorPage">
+            <div class="error-content">
+                <div class="error-icon">❌</div>
+                <h1>Error</h1>
+                <p id="errorMessage">An error occurred while processing your request.</p>
+                <button class="btn-back" id="errorBackBtn">Go Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Ad Banner -->
+    <div class="w-full glass border-b border-white/10 shadow-lg">
+        <div class="ad-banner bottom w-full min-h-32 py-4" data-position="bottom">
+            <div class="relative flex items-center justify-center">
+                <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                    <div class="ad-content" id="bottom-ad-content"></div>
+                    <div class="ad-fallback" id="bottom-ad-fallback">
+                        <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                        <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                    </div>
+                </div>
+                <div class="ad-dots" id="bottom-ad-dots"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Ad Banner -->
+    <div class="w-full glass border-b border-white/10 shadow-lg">
+        <div class="ad-banner footer w-full min-h-32 py-4" data-position="footer">
+            <div class="relative flex items-center justify-center">
+                <div class="ad-container" style="width: 100%; height: auto; max-width: 100%;">
+                    <div class="ad-content" id="footer-ad-content"></div>
+                    <div class="ad-fallback" id="footer-ad-fallback">
+                        <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                        <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                    </div>
+                </div>
+                <div class="ad-dots" id="footer-ad-dots"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interstitial Ad Overlay -->
+    <div id="interstitialAdOverlay" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="relative w-full max-w-4xl h-full max-h-96">
+                <!-- Close Button -->
+                <button id="closeInterstitialBtn" class="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl font-bold z-10 bg-black bg-opacity-50 rounded-full w-8 h-8 flex items-center justify-center">
+                    ✕
+                </button>
+                
+                <!-- Interstitial Ad Container -->
+                <div class="ad-banner interstitial w-full h-full" data-position="interstitial">
+                    <div class="relative flex items-center justify-center h-full">
+                        <div class="ad-container" style="width: 100%; height: 100%; max-width: 100%;">
+                            <div class="ad-content" id="interstitial-ad-content"></div>
+                            <div class="ad-fallback" id="interstitial-ad-fallback">
+                                <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                                <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                            </div>
+                        </div>
+                        <div class="ad-dots" id="interstitial-ad-dots"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

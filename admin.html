@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Video Streaming App</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Admin panel for managing video streaming application settings">
+    <meta name="keywords" content="admin, video, streaming, management">
+    <meta name="author" content="">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Admin Panel - Video Streaming App">
+    <meta property="og:description" content="Admin panel for managing video streaming application settings">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Admin Panel - Video Streaming App">
+    <meta name="twitter:description" content="Admin panel for managing video streaming application settings">
+    <meta name="twitter:image" content="">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        body {
+            color: rgb(255, 255, 255);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+        }
+
+        .admin-nav {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-section {
+            display: none;
+        }
+
+        .admin-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 12px 24px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .status-offline {
+            background: #ef4444;
+        }
+
+        .reaction-preview {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .glass {
+                padding: 1rem;
+            }
+            
+            .form-group input, .form-group textarea, .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .btn-primary, .btn-secondary {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-nav {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .btn-primary, .btn-secondary {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .glass {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Admin Navigation -->
+    <nav class="admin-nav p-4">
+        <div class="container mx-auto">
+            <!-- Navigation -->
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold">🔧 Admin Panel</h1>
+                    <div class="ml-4 flex items-center">
+                        <span class="status-indicator status-online" id="dbStatus"></span>
+                        <span id="dbStatusText">Connected</span>
+                    </div>
+                </div>
+                <div class="flex gap-1 sm:gap-2 lg:gap-4 flex-wrap justify-center sm:justify-end">
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('dashboard')">Dashboard</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('ads')">Ads</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('reactions')">Reactions</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('credentials')">Credentials</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('metadata')">Metadata</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('pageTitles')">Titles</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="showSection('api')">API</button>
+                    <button class="btn-secondary text-xs sm:text-sm lg:text-base px-2 py-1" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-6">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="admin-section active">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-2">Total Views</h3>
+                    <p class="text-3xl font-bold text-blue-400" id="totalViews">0</p>
+                </div>
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-2">Total Downloads</h3>
+                    <p class="text-3xl font-bold text-green-400" id="totalDownloads">0</p>
+                </div>
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-2">Active Ads</h3>
+                    <p class="text-3xl font-bold text-purple-400" id="activeAds">0</p>
+                </div>
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-2">Total Reactions</h3>
+                    <p class="text-3xl font-bold text-pink-400" id="totalReactions">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-4">Recent Activity</h3>
+                    <div id="recentActivity" class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg rgba(255, 255, 255, 0.05) rounded">
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-4">System Status</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span>Database Connection</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>API Server</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span>Ad Server</span>
+                            <span class="status-indicator status-online"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ads Management Section -->
+        <div id="ads" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">Ads Management</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- VAST Ads -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">VAST Video Ads</h3>
+                        <div class="form-group">
+                            <label>Pre-Roll Ad URL</label>
+                            <input type="text" id="preRollAd" placeholder="https://validcounter.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Mid-Roll Ad URL</label>
+                            <input type="text" id="midRollAd" placeholder="https://validcounter.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label>Post-Roll Ad URL</label>
+                            <input type="text" id="postRollAd" placeholder="https://validcounter.com/...">
+                        </div>
+                        <button class="btn-primary" onclick="saveVastAds()">Save VAST Ads</button>
+                    </div>
+
+                    <!-- Banner Ads -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Banner Ads</h3>
+                        <div class="form-group">
+                            <label>Top Banner Ad Code</label>
+                            <textarea id="topBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Middle Banner Ad Code</label>
+                            <textarea id="middleBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Bottom Banner Ad Code</label>
+                            <textarea id="bottomBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Header Banner Ad Code</label>
+                            <textarea id="headerBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Sidebar Banner Ad Code</label>
+                            <textarea id="sidebarBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Footer Banner Ad Code</label>
+                            <textarea id="footerBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Interstitial Ad Code</label>
+                            <textarea id="interstitialBannerAd" rows="4" placeholder="<script>...</script>"></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="saveBannerAds()">Save Banner Ads</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reactions Management Section -->
+        <div id="reactions" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">Reactions Management</h2>
+                
+                <!-- Add New Reaction -->
+                <div class="mb-6 p-4 rounded-lg" style="background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.2);">
+                    <h3 class="text-lg font-semibold mb-3">➕ Add New Reaction</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-group">
+                            <label>Reaction Key</label>
+                            <input type="text" id="newReactionKey" placeholder="e.g., fire, cool, amazing">
+                        </div>
+                        <div class="form-group">
+                            <label>Emoji</label>
+                            <input type="text" id="newReactionEmoji" placeholder="🔥">
+                        </div>
+                        <div class="form-group">
+                            <label>Label</label>
+                            <input type="text" id="newReactionLabel" placeholder="Fire">
+                        </div>
+                    </div>
+                    <button class="btn-secondary mt-3" onclick="addNewReaction()">Add Reaction</button>
+                </div>
+                
+                <!-- Existing Reactions -->
+                <div id="existingReactions" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Reactions will be loaded here dynamically -->
+                </div>
+
+                <button class="btn-primary mt-6" onclick="saveReactions()">Save All Reactions</button>
+            </div>
+        </div>
+
+        <!-- Credentials Management Section -->
+        <div id="credentials" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">Admin Credentials</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Change Password</h3>
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" id="currentPassword" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="newPassword" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                        </div>
+                        <button class="btn-primary w-full sm:w-auto" onclick="changePassword()">Change Password</button>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Database Settings</h3>
+                        <div class="form-group">
+                            <label>Database URI</label>
+                            <input type="text" id="databaseUri" value="mongodb+srv://sunnyfbook21:pY62CnoJaudg1wXt@cluster0.brruqsz.mongodb.net/?retryWrites=true&w=majority" placeholder="MongoDB URI">
+                        </div>
+                        <div class="form-group">
+                            <label>Database Name</label>
+                            <input type="text" id="databaseName" value="cluster0" placeholder="Database name">
+                        </div>
+                        <button class="btn-primary w-full sm:w-auto" onclick="saveDatabaseSettings()">Save Database Settings</button>
+                        
+                        <div class="mt-6 p-4 rounded-lg" style="background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.2);">
+                            <h4 class="text-lg font-semibold mb-3">🔧 Connection String Generator</h4>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium mb-2">Database Type</label>
+                                <select id="dbType" class="w-full p-2 rounded border">
+                                    <option value="atlas">MongoDB Atlas</option>
+                                    <option value="local">Local MongoDB</option>
+                                </select>
+                            </div>
+                            
+                            <div id="atlasFields">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" id="atlasUsername" placeholder="Your MongoDB Atlas username">
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <input type="password" id="atlasPassword" placeholder="Your MongoDB Atlas password">
+                                </div>
+                                <div class="form-group">
+                                    <label>Cluster Name</label>
+                                    <input type="text" id="atlasCluster" placeholder="cluster0.brruqsz">
+                                </div>
+                                <div class="form-group">
+                                    <label>Database Name</label>
+                                    <input type="text" id="atlasDatabase" value="video-streaming-app" placeholder="Database name">
+                                </div>
+                            </div>
+                            
+                            <div id="localFields" class="hidden">
+                                <div class="form-group">
+                                    <label>Host</label>
+                                    <input type="text" id="localHost" value="localhost" placeholder="localhost">
+                                </div>
+                                <div class="form-group">
+                                    <label>Port</label>
+                                    <input type="text" id="localPort" value="27017" placeholder="27017">
+                                </div>
+                                <div class="form-group">
+                                    <label>Username (Optional)</label>
+                                    <input type="text" id="localUsername" placeholder="Username if authentication required">
+                                </div>
+                                <div class="form-group">
+                                    <label>Password (Optional)</label>
+                                    <input type="password" id="localPassword" placeholder="Password if authentication required">
+                                </div>
+                                <div class="form-group">
+                                    <label>Database Name</label>
+                                    <input type="text" id="localDatabase" value="video-streaming-app" placeholder="Database name">
+                                </div>
+                            </div>
+                            
+                            <button class="btn-secondary w-full" onclick="generateConnectionString()">Generate Connection String</button>
+                            
+                            <div id="generatedConnection" class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded hidden">
+                                <label class="block text-sm font-medium mb-2">Generated Connection String:</label>
+                                <textarea id="generatedConnectionString" class="w-full p-2 rounded border text-sm" rows="3" readonly></textarea>
+                                <button class="btn-primary mt-2" onclick="useGeneratedConnection()">Use This Connection</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Settings Section -->
+        <div id="api" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">API Settings</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Video API</h3>
+                        <div class="form-group">
+                            <label>API Base URL</label>
+                            <input type="text" id="apiBaseUrl" value="https://camgrabber.onrender.com" placeholder="https://api.example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>API Key (Optional)</label>
+                            <input type="text" id="apiKey" placeholder="Enter API key if required">
+                        </div>
+                        <button class="btn-primary w-full sm:w-auto" onclick="saveApiSettings()">Save API Settings</button>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Server Settings</h3>
+                        <div class="form-group">
+                            <label>Server Port</label>
+                            <input type="number" id="serverPort" value="3000" placeholder="3000">
+                        </div>
+                        <div class="form-group">
+                            <label>Environment</label>
+                            <select id="environment">
+                                <option value="development">Development</option>
+                                <option value="production">Production</option>
+                                <option value="staging">Staging</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary w-full sm:w-auto" onclick="saveServerSettings()">Save Server Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Titles Section -->
+        <div id="pageTitles" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">Page Titles Management</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Homepage -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">🏠 Homepage</h3>
+                        <div class="form-group">
+                            <label>Page Title</label>
+                            <input type="text" id="homepageTitle" placeholder="YouTube Video Downloader">
+                        </div>
+                        <div class="form-group">
+                            <label>Page Subtitle</label>
+                            <input type="text" id="homepageSubtitle" placeholder="Download YouTube videos in high quality for free">
+                        </div>
+                    </div>
+
+                    <!-- Streaming Page -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">🎬 Streaming Page</h3>
+                        <div class="form-group">
+                            <label>Page Title</label>
+                            <input type="text" id="streamingTitle" placeholder="Video Streaming">
+                        </div>
+                        <div class="form-group">
+                            <label>Page Subtitle</label>
+                            <input type="text" id="streamingSubtitle" placeholder="Watch and download videos in high quality">
+                        </div>
+                    </div>
+
+                    <!-- Admin Panel -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">⚙️ Admin Panel</h3>
+                        <div class="form-group">
+                            <label>Page Title</label>
+                            <input type="text" id="adminTitle" placeholder="Admin Dashboard">
+                        </div>
+                        <div class="form-group">
+                            <label>Page Subtitle</label>
+                            <input type="text" id="adminSubtitle" placeholder="Manage your application settings">
+                        </div>
+                    </div>
+
+                    <!-- Login Page -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">🔐 Login Page</h3>
+                        <div class="form-group">
+                            <label>Page Title</label>
+                            <input type="text" id="loginTitle" placeholder="Admin Login">
+                        </div>
+                        <div class="form-group">
+                            <label>Page Subtitle</label>
+                            <input type="text" id="loginSubtitle" placeholder="Enter your credentials to access the admin panel">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button class="btn-primary" onclick="savePageTitles()">Save Page Titles</button>
+                    <button class="btn-secondary" onclick="previewPageTitles()">Preview Changes</button>
+                    <button class="btn-secondary" onclick="resetPageTitles()">Reset to Default</button>
+                </div>
+
+                <!-- Preview Section -->
+                <div id="pageTitlesPreview" class="mt-6 hidden">
+                    <h3 class="text-xl font-semibold mb-4">Preview</h3>
+                    <div class="glass p-4 rounded">
+                        <div id="pageTitlesPreviewContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Website Metadata Section -->
+        <div id="metadata" class="admin-section">
+            <div class="glass p-6 rounded-lg">
+                <h2 class="text-2xl font-bold mb-6">Website Metadata Management</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Basic Metadata -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Basic Information</h3>
+                        <div class="form-group">
+                            <label>Website Title</label>
+                            <input type="text" id="websiteTitle" placeholder="Video Streaming App">
+                        </div>
+                        <div class="form-group">
+                            <label>Website Description</label>
+                            <textarea id="websiteDescription" rows="3" placeholder="Stream and download videos from various sources"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Keywords (comma separated)</label>
+                            <input type="text" id="websiteKeywords" placeholder="video, streaming, download, mp4">
+                        </div>
+                        <div class="form-group">
+                            <label>Author</label>
+                            <input type="text" id="websiteAuthor" placeholder="Your Name">
+                        </div>
+                    </div>
+
+                    <!-- Social Media Metadata -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Social Media</h3>
+                        <div class="form-group">
+                            <label>Open Graph Title</label>
+                            <input type="text" id="ogTitle" placeholder="Video Streaming App">
+                        </div>
+                        <div class="form-group">
+                            <label>Open Graph Description</label>
+                            <textarea id="ogDescription" rows="3" placeholder="Stream and download videos from various sources"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Open Graph Image URL</label>
+                            <input type="url" id="ogImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <div class="form-group">
+                            <label>Twitter Card Type</label>
+                            <select id="twitterCard">
+                                <option value="summary">Summary</option>
+                                <option value="summary_large_image">Summary Large Image</option>
+                                <option value="player">Player</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Metadata -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Advanced Settings</h3>
+                        <div class="form-group">
+                            <label>Favicon URL</label>
+                            <input type="url" id="faviconUrl" placeholder="https://example.com/favicon.ico">
+                        </div>
+                        <div class="form-group">
+                            <label>Canonical URL</label>
+                            <input type="url" id="canonicalUrl" placeholder="https://example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Robots Meta</label>
+                            <select id="robotsMeta">
+                                <option value="index,follow">Index, Follow</option>
+                                <option value="noindex,nofollow">No Index, No Follow</option>
+                                <option value="index,nofollow">Index, No Follow</option>
+                                <option value="noindex,follow">No Index, Follow</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Viewport</label>
+                            <input type="text" id="viewportMeta" value="width=device-width, initial-scale=1.0">
+                        </div>
+                    </div>
+
+                    <!-- Analytics & Tracking -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Analytics & Tracking</h3>
+                        <div class="form-group">
+                            <label>Google Analytics ID</label>
+                            <input type="text" id="googleAnalyticsId" placeholder="G-XXXXXXXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Google Tag Manager ID</label>
+                            <input type="text" id="googleTagManagerId" placeholder="GTM-XXXXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Head Scripts</label>
+                            <textarea id="customHeadScripts" rows="4" placeholder="<!-- Add custom scripts here -->"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Body Scripts</label>
+                            <textarea id="customBodyScripts" rows="4" placeholder="<!-- Add custom scripts here -->"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex gap-4">
+                    <button class="btn-primary" onclick="saveMetadata()">Save Metadata</button>
+                    <button class="btn-secondary" onclick="previewMetadata()">Preview Changes</button>
+                    <button class="btn-secondary" onclick="resetMetadata()">Reset to Default</button>
+                </div>
+
+                <!-- Preview Section -->
+                <div id="metadataPreview" class="mt-6 hidden">
+                    <h3 class="text-xl font-semibold mb-4">Preview</h3>
+                    <div class="glass p-4 rounded">
+                        <div id="previewContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html> 
