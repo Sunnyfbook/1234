@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAST Ad Debug Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .video-player {
+            width: 100%;
+            height: 400px;
+            background: #000;
+        }
+    </style>
+    <link href="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.css" rel="stylesheet">
+    <script src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
+</head>
+<body>
+    <h1>🔍 VAST Ad Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>Step 1: Load Current VAST Settings</h2>
+        <button class="test-button" onclick="loadCurrentVastSettings()">Load Current VAST Settings</button>
+        <div id="currentSettingsResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 2: Test VAST URL</h2>
+        <input type="text" id="vastUrlInput" class="url-input" placeholder="Paste your VAST URL here...">
+        <button class="test-button" onclick="testVastUrl()">Test This VAST URL</button>
+        <div id="vastTestResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 3: Test Video Player with VAST</h2>
+        <input type="text" id="videoUrlInput" class="url-input" placeholder="Paste your video URL here...">
+        <input type="text" id="vastUrlForPlayer" class="url-input" placeholder="Paste VAST URL for player test...">
+        <button class="test-button" onclick="testVideoPlayerWithVast()">Test Video Player with VAST</button>
+        <div id="playerTestResult" class="result"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Step 4: Video Player Test</h2>
+        <div class="video-container">
+            <video id="testVideoPlayer" class="video-player" controls>
+                <source src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div id="playerStatus" class="result"></div>
+    </div>
+
+    <script>
+        let currentVastSettings = null;
+        let testVideoPlayer = null;
+
+        async function loadCurrentVastSettings() {
+            const resultDiv = document.getElementById('currentSettingsResult');
+            resultDiv.textContent = 'Loading current VAST settings...';
+            
+            try {
+                const response = await fetch('/api/settings/vast_ads');
+                const vastData = await response.json();
+                currentVastSettings = vastData;
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Current VAST Settings Loaded!\n\n` +
+                    `Data structure: ${JSON.stringify(vastData, null, 2)}\n\n` +
+                    `Keys found: ${Object.keys(vastData).join(', ')}\n\n` +
+                    `Pre-roll: ${vastData.preRoll || 'Not set'}\n` +
+                    `Mid-roll: ${vastData.midRoll || 'Not set'}\n` +
+                    `Post-roll: ${vastData.postRoll || 'Not set'}`;
+                
+                // Auto-fill inputs if available
+                if (vastData.preRoll) {
+                    document.getElementById('vastUrlInput').value = vastData.preRoll;
+                    document.getElementById('vastUrlForPlayer').value = vastData.preRoll;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error loading VAST settings: ${error.message}`;
+            }
+        }
+
+        async function testVastUrl() {
+            const url = document.getElementById('vastUrlInput').value.trim();
+            const resultDiv = document.getElementById('vastTestResult');
+            
+            if (!url) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Please enter a VAST URL to test';
+                return;
+            }
+            
+            resultDiv.textContent = `Testing VAST URL: ${url}\n\nLoading...`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/xml, text/xml, */*'
+                    }
+                });
+                
+                const status = response.status;
+                const contentType = response.headers.get('content-type');
+                const content = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ VAST URL Test Successful!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Content Length: ${content.length} characters\n\n` +
+                        `Content Preview (first 1000 chars):\n${content.substring(0, 1000)}${content.length > 1000 ? '...' : ''}\n\n` +
+                        `Is VAST XML: ${content.includes('<VAST') ? '✅ Yes' : '❌ No'}\n` +
+                        `Has Linear: ${content.includes('<Linear>') ? '✅ Yes' : '❌ No'}\n` +
+                        `Has MediaFile: ${content.includes('<MediaFile>') ? '✅ Yes' : '❌ No'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ VAST URL Test Failed!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Response: ${content}`;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ VAST URL Test Error!\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This could be due to:\n` +
+                    `- CORS policy blocking the request\n` +
+                    `- Invalid URL format\n` +
+                    `- Network connectivity issues\n` +
+                    `- Domain restrictions`;
+            }
+        }
+
+        async function testVideoPlayerWithVast() {
+            const videoUrl = document.getElementById('videoUrlInput').value.trim();
+            const vastUrl = document.getElementById('vastUrlForPlayer').value.trim();
+            const resultDiv = document.getElementById('playerTestResult');
+            
+            if (!videoUrl) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Please enter a video URL';
+                return;
+            }
+            
+            resultDiv.textContent = 'Testing video player with VAST ads...\n\nLoading...';
+            
+            try {
+                // Dispose existing player
+                if (testVideoPlayer) {
+                    try {
+                        testVideoPlayer.dispose();
+                    } catch (e) {
+                        console.warn('Error disposing player:', e);
+                    }
+                }
+                
+                // Set video source
+                const videoElement = document.getElementById('testVideoPlayer');
+                const sourceElement = videoElement.querySelector('source');
+                sourceElement.src = videoUrl;
+                videoElement.load();
+                
+                // Configure player
+                const playerConfig = {
+                    layoutControls: {
+                        primaryColor: "#3b82f6",
+                        fillToContainer: true,
+                        posterImage: ""
+                    },
+                    responsive: true
+                };
+                
+                if (vastUrl) {
+                    playerConfig.vastOptions = {
+                        adList: [{
+                            roll: "preRoll",
+                            vastTag: vastUrl
+                        }],
+                        autoplay: false,
+                        playAdAlways: false,
+                        vpaidFlashLoaderPath: "https://www.fluidplayer.com/vast/VPAIDFlash.swf",
+                        timeout: 10000,
+                        maxAllowedVastTagRedirects: 5,
+                        vastLoadTimeout: 8000
+                    };
+                }
+                
+                // Initialize player
+                testVideoPlayer = fluidPlayer('testVideoPlayer', playerConfig);
+                
+                // Add event listeners
+                if (testVideoPlayer && testVideoPlayer.ads) {
+                    testVideoPlayer.ads.on('vast.adError', (error) => {
+                        resultDiv.className = 'result error';
+                        resultDiv.textContent += `\n❌ VAST Ad Error: ${JSON.stringify(error)}`;
+                    });
+                    
+                    testVideoPlayer.ads.on('vast.adStarted', () => {
+                        resultDiv.textContent += `\n✅ VAST Ad Started`;
+                    });
+                    
+                    testVideoPlayer.ads.on('vast.adEnded', () => {
+                        resultDiv.textContent += `\n✅ VAST Ad Ended`;
+                    });
+                }
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Video Player Test Started!\n\n` +
+                    `Video URL: ${videoUrl}\n` +
+                    `VAST URL: ${vastUrl || 'None'}\n` +
+                    `Player Config: ${JSON.stringify(playerConfig, null, 2)}\n\n` +
+                    `Watch the video player above and check for any errors in the console.`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Video Player Test Error!\n\n` +
+                    `Error: ${error.message}`;
+            }
+        }
+
+        // Auto-load settings on page load
+        window.addEventListener('load', () => {
+            loadCurrentVastSettings();
+        });
+    </script>
+</body>
+</html> 

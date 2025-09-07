@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Ad Test - Mmsbee24</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .ad-container {
+            position: relative;
+            overflow: hidden;
+            min-height: 90px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .ad-content {
+            position: relative;
+            width: 100%;
+            height: auto;
+            min-height: inherit;
+        }
+        
+        .ad-content iframe {
+            max-width: 100% !important;
+            height: auto !important;
+            min-height: 90px;
+        }
+        
+        .debug-info {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Mobile Ad Test Page</h1>
+        
+        <div class="debug-info">
+            <h3 class="font-bold mb-2">Device Information:</h3>
+            <div id="deviceInfo"></div>
+        </div>
+        
+        <div class="flex flex-wrap gap-4 mb-6">
+            <button class="test-button" onclick="testAd('top')">Test Top Ad</button>
+            <button class="test-button" onclick="testAd('middle')">Test Middle Ad</button>
+            <button class="test-button" onclick="testAd('bottom')">Test Bottom Ad</button>
+            <button class="test-button" onclick="clearAllAds()">Clear All Ads</button>
+            <button class="test-button" onclick="refreshPage()">Refresh Page</button>
+        </div>
+        
+        <div class="grid gap-6">
+            <!-- Top Ad Test -->
+            <div class="ad-container">
+                <h3 class="text-lg font-semibold mb-2">Top Ad Test</h3>
+                <div class="ad-content" id="top-ad-content"></div>
+                <div class="ad-fallback" id="top-ad-fallback" style="display: none;">
+                    <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                    <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                </div>
+            </div>
+            
+            <!-- Middle Ad Test -->
+            <div class="ad-container">
+                <h3 class="text-lg font-semibold mb-2">Middle Ad Test</h3>
+                <div class="ad-content" id="middle-ad-content"></div>
+                <div class="ad-fallback" id="middle-ad-fallback" style="display: none;">
+                    <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                    <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                </div>
+            </div>
+            
+            <!-- Bottom Ad Test -->
+            <div class="ad-container">
+                <h3 class="text-lg font-semibold mb-2">Bottom Ad Test</h3>
+                <div class="ad-content" id="bottom-ad-content"></div>
+                <div class="ad-fallback" id="bottom-ad-fallback" style="display: none;">
+                    <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                    <p style="margin: 0; font-size: 14px;">External ad content loading...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-info mt-6">
+            <h3 class="font-bold mb-2">Console Log:</h3>
+            <div id="consoleLog" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Ad data for testing
+        const adsData = {
+            top: [
+                {
+                    id: 'top-1',
+                    adCode: `<script>(function(pbms){ var d = document, s = d.createElement('script'), l = d.scripts[d.scripts.length - 1]; s.settings = pbms || {}; s.src = "//distortedwin.com/btXIVRs/d.GMlK0fYjWMco/Fe/m/9du/ZPUmlhkJPbTUYn1BNuTeQpyRNkDuEjtbNvjdUD1zN/D/Io0/Mdgh"; s.async = true; s.referrerPolicy = 'no-referrer-when-downgrade'; l.parentNode.insertBefore(s, l); })({})<\/script>`,
+                    width: '100%',
+                    height: 'auto'
+                }
+            ],
+            middle: [
+                {
+                    id: 'middle-1',
+                    adCode: `<script>(function(xwtt){var d = document,s = d.createElement('script'),l = d.scripts[d.scripts.length - 1];s.settings = xwtt || {};s.src = "//distortedwin.com/bvX.VzscdqG-lX0/Y/WAcv/pevmB9tuAZyUblMkdP/ThYH1PNgTpkV3hOCDIcgtaNpjNUG1HONTCcc4gOZAn";s.async = true;s.referrerPolicy = 'no-referrer-when-downgrade';l.parentNode.insertBefore(s, l);})({})<\/script>`,
+                    width: '100%',
+                    height: 'auto'
+                }
+            ],
+            bottom: [
+                {
+                    id: 'bottom-1',
+                    adCode: `<script>(function(ryyxmdj){var d = document,s = d.createElement('script'),l = d.scripts[d.scripts.length - 1];s.settings = ryyxmdj || {};s.src = "//distortedwin.com/bPX.VHssdfG/lE0/YEWwc_/weFmO9/u/ZFUUlmkvPKTdYv1jN/TIU/xwNjjiUMtKNSj/Un1/NtTzEQ2_NBga";s.async = true;s.referrerPolicy = 'no-referrer-when-downgrade';l.parentNode.insertBefore(s, l);})({})<\/script>`,
+                    width: '100%',
+                    height: 'auto'
+                }
+            ]
+        };
+
+        // Enhanced AdManager for testing
+        class TestAdManager {
+            constructor(position) {
+                this.position = position;
+                this.ads = adsData[position] || [];
+                this.currentIndex = 0;
+                this.container = document.getElementById(`${position}-ad-content`);
+                this.fallback = document.getElementById(`${position}-ad-fallback`);
+                this.isMobile = this.detectMobile();
+                this.adLoadTimeout = null;
+                this.adLoadRetries = 0;
+                this.maxRetries = 3;
+            }
+
+            detectMobile() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                       window.innerWidth <= 768;
+            }
+
+            showAd(index = 0) {
+                this.currentIndex = index;
+                const ad = this.ads[index];
+                
+                if (!ad || !this.container) return;
+
+                log(`Testing ${this.position} ad on ${this.isMobile ? 'mobile' : 'desktop'}`);
+
+                // Clear previous timeout
+                if (this.adLoadTimeout) {
+                    clearTimeout(this.adLoadTimeout);
+                }
+
+                // Clear container
+                this.container.innerHTML = '';
+                
+                // Hide fallback
+                if (this.fallback) {
+                    this.fallback.style.display = 'none';
+                }
+
+                // Show loading indicator for mobile
+                if (this.isMobile) {
+                    this.showMobileLoadingIndicator();
+                }
+
+                // Create marker
+                const marker = document.createElement('div');
+                marker.id = `ad-marker-${ad.id}`;
+                marker.style.display = 'none';
+                document.body.appendChild(marker);
+
+                // Inject ad script with mobile-specific handling
+                const script = document.createElement('script');
+                script.innerHTML = ad.adCode.replace(/<script>|<\/script>/g, '');
+                
+                // Add mobile-specific attributes for better mobile ad loading
+                if (this.isMobile) {
+                    script.setAttribute('data-mobile', 'true');
+                    script.setAttribute('data-viewport', 'mobile');
+                }
+                
+                document.body.appendChild(script);
+
+                // Enhanced content moving with mobile-specific timing
+                const moveContent = () => {
+                    try {
+                        const markerElement = document.getElementById(`ad-marker-${ad.id}`);
+                        if (markerElement) {
+                            let nextElement = markerElement.nextSibling;
+                            let movedElements = 0;
+                            
+                            while (nextElement && nextElement !== script) {
+                                const elementToMove = nextElement;
+                                nextElement = nextElement.nextSibling;
+                                if (elementToMove.nodeType === Node.ELEMENT_NODE) {
+                                    this.container.appendChild(elementToMove);
+                                    movedElements++;
+                                }
+                            }
+                            
+                            markerElement.remove();
+                            
+                            log(`Moved ${movedElements} elements for ${this.position} ad`);
+                            
+                            // If we moved content, hide loading indicator
+                            if (movedElements > 0 && this.isMobile) {
+                                this.hideMobileLoadingIndicator();
+                            }
+                        }
+                        if (script && script.parentNode) {
+                            script.remove();
+                        }
+                    } catch (error) {
+                        log(`Error moving ad content: ${error.message}`);
+                    }
+                };
+
+                // Use longer timeout for mobile devices
+                const timeout = this.isMobile ? 500 : 200;
+                this.adLoadTimeout = setTimeout(moveContent, timeout);
+
+                // Enhanced fallback mechanism
+                const checkAdLoad = () => {
+                    if (this.container.children.length === 0) {
+                        if (this.adLoadRetries < this.maxRetries) {
+                            this.adLoadRetries++;
+                            log(`Retrying ${this.position} ad load, attempt ${this.adLoadRetries}`);
+                            this.adLoadTimeout = setTimeout(moveContent, timeout * 2);
+                            this.adLoadTimeout = setTimeout(checkAdLoad, timeout * 3);
+                        } else {
+                            this.showFallback();
+                        }
+                    } else {
+                        this.adLoadRetries = 0; // Reset retries on success
+                        if (this.isMobile) {
+                            this.hideMobileLoadingIndicator();
+                        }
+                        log(`✅ ${this.position} ad loaded successfully`);
+                    }
+                };
+
+                // Check ad load status with mobile-specific timing
+                const fallbackTimeout = this.isMobile ? 4000 : 3000;
+                setTimeout(checkAdLoad, fallbackTimeout);
+            }
+
+            showMobileLoadingIndicator() {
+                if (this.container) {
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.id = `${this.position}-loading`;
+                    loadingDiv.innerHTML = `
+                        <div style="text-align: center; padding: 20px; color: rgba(255,255,255,0.8);">
+                            <div style="width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px;"></div>
+                            <p style="margin: 0; font-size: 14px;">Loading advertisement...</p>
+                        </div>
+                    `;
+                    this.container.appendChild(loadingDiv);
+                }
+            }
+
+            hideMobileLoadingIndicator() {
+                const loadingDiv = document.getElementById(`${this.position}-loading`);
+                if (loadingDiv) {
+                    loadingDiv.remove();
+                }
+            }
+
+            showFallback() {
+                if (this.fallback) {
+                    this.fallback.style.display = 'block';
+                    this.fallback.innerHTML = `
+                        <h4 style="margin: 0 0 10px 0;">🎬 Advertisement</h4>
+                        <p style="margin: 0; font-size: 14px;">${this.isMobile ? 'Mobile ad content loading...' : 'External ad content loading...'}</p>
+                    `;
+                }
+                if (this.isMobile) {
+                    this.hideMobileLoadingIndicator();
+                }
+                log(`⚠️ ${this.position} ad fallback shown`);
+            }
+        }
+
+        // Global ad managers
+        let adManagers = {};
+
+        // Initialize device info
+        function initializeDeviceInfo() {
+            const deviceInfo = document.getElementById('deviceInfo');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                            window.innerWidth <= 768;
+            
+            deviceInfo.innerHTML = `
+                <div>Device: ${isMobile ? 'Mobile' : 'Desktop'}</div>
+                <div>User Agent: ${navigator.userAgent}</div>
+                <div>Viewport: ${window.innerWidth}x${window.innerHeight}</div>
+                <div>Pixel Ratio: ${window.devicePixelRatio}</div>
+                <div>Platform: ${navigator.platform}</div>
+            `;
+        }
+
+        // Console logging function
+        function log(message) {
+            const consoleLog = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleLog.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            console.log(message);
+        }
+
+        // Test ad function
+        function testAd(position) {
+            log(`🧪 Testing ${position} ad...`);
+            if (!adManagers[position]) {
+                adManagers[position] = new TestAdManager(position);
+            }
+            adManagers[position].showAd();
+        }
+
+        // Clear all ads
+        function clearAllAds() {
+            log('🧹 Clearing all ads...');
+            Object.keys(adManagers).forEach(position => {
+                const container = document.getElementById(`${position}-ad-content`);
+                const fallback = document.getElementById(`${position}-ad-fallback`);
+                if (container) container.innerHTML = '';
+                if (fallback) fallback.style.display = 'none';
+            });
+        }
+
+        // Refresh page
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDeviceInfo();
+            log('📱 Mobile Ad Test Page loaded');
+            log(`Device detected: ${/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768 ? 'Mobile' : 'Desktop'}`);
+        });
+
+        // Monitor viewport changes
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                initializeDeviceInfo();
+                log(`Viewport changed to ${window.innerWidth}x${window.innerHeight}`);
+            }, 100);
+        });
+    </script>
+</body>
+</html> 

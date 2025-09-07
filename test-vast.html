@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAST URL Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 VAST URL Tester</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Load VAST URLs from Database</h2>
+        <button class="test-button" onclick="loadVastUrls()">Load VAST URLs from Admin Panel</button>
+        <div id="vastUrlsResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Test Individual VAST URLs</h2>
+        <input type="text" id="vastUrlInput" class="url-input" placeholder="Paste your VAST URL here...">
+        <button class="test-button" onclick="testVastUrl()">Test This VAST URL</button>
+        <div id="vastTestResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Test Working VAST URL (Reference)</h2>
+        <button class="test-button" onclick="testWorkingVast()">Test Working VAST URL</button>
+        <div id="workingVastResult" class="result"></div>
+    </div>
+
+    <script>
+        async function loadVastUrls() {
+            const resultDiv = document.getElementById('vastUrlsResult');
+            resultDiv.textContent = 'Loading VAST URLs from database...';
+            
+            try {
+                const response = await fetch('/api/settings/vast_ads');
+                const vastData = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ VAST URLs loaded successfully!\n\n` +
+                    `Data structure: ${JSON.stringify(vastData, null, 2)}\n\n` +
+                    `Keys found: ${Object.keys(vastData).join(', ')}\n\n` +
+                    `Pre-roll: ${vastData.preRoll || 'Not found'}\n` +
+                    `Mid-roll: ${vastData.midRoll || 'Not found'}\n` +
+                    `Post-roll: ${vastData.postRoll || 'Not found'}`;
+                
+                // Auto-fill the input with pre-roll URL if available
+                if (vastData.preRoll) {
+                    document.getElementById('vastUrlInput').value = vastData.preRoll;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Error loading VAST URLs: ${error.message}`;
+            }
+        }
+
+        async function testVastUrl() {
+            const url = document.getElementById('vastUrlInput').value.trim();
+            const resultDiv = document.getElementById('vastTestResult');
+            
+            if (!url) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ Please enter a VAST URL to test';
+                return;
+            }
+            
+            resultDiv.textContent = `Testing VAST URL: ${url}\n\nLoading...`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/xml, text/xml, */*'
+                    }
+                });
+                
+                const status = response.status;
+                const contentType = response.headers.get('content-type');
+                const content = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ VAST URL Test Successful!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Content Length: ${content.length} characters\n\n` +
+                        `Content Preview (first 500 chars):\n${content.substring(0, 500)}${content.length > 500 ? '...' : ''}\n\n` +
+                        `Is VAST XML: ${content.includes('<VAST') ? '✅ Yes' : '❌ No'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ VAST URL Test Failed!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Response: ${content}`;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ VAST URL Test Error!\n\n` +
+                    `Error: ${error.message}\n\n` +
+                    `This could be due to:\n` +
+                    `- CORS policy blocking the request\n` +
+                    `- Invalid URL format\n` +
+                    `- Network connectivity issues\n` +
+                    `- Domain restrictions`;
+            }
+        }
+
+        async function testWorkingVast() {
+            const workingUrl = 'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator=';
+            const resultDiv = document.getElementById('workingVastResult');
+            
+            resultDiv.textContent = `Testing working VAST URL: ${workingUrl}\n\nLoading...`;
+            
+            try {
+                const response = await fetch(workingUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/xml, text/xml, */*'
+                    }
+                });
+                
+                const status = response.status;
+                const contentType = response.headers.get('content-type');
+                const content = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Working VAST URL Test Successful!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Content Length: ${content.length} characters\n\n` +
+                        `Content Preview (first 500 chars):\n${content.substring(0, 500)}${content.length > 500 ? '...' : ''}\n\n` +
+                        `Is VAST XML: ${content.includes('<VAST') ? '✅ Yes' : '❌ No'}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Working VAST URL Test Failed!\n\n` +
+                        `Status: ${status}\n` +
+                        `Content-Type: ${contentType}\n` +
+                        `Response: ${content}`;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Working VAST URL Test Error!\n\n` +
+                    `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> 
